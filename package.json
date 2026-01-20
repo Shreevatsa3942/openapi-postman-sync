@@ -1,0 +1,39 @@
+{
+  "name": "openapi-postman-sync",
+  "version": "1.0.0",
+  "description": "Automate Postman collection updates from OpenAPI specifications in CI/CD pipelines",
+  "main": "scripts/convert.js",
+  "bin": {
+    "openapi-postman-sync": "./scripts/convert.js"
+  },
+  "scripts": {
+    "convert": "node scripts/convert.js",
+    "merge": "node scripts/merge-collections.js",
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "keywords": [
+    "openapi",
+    "postman",
+    "swagger",
+    "api",
+    "automation",
+    "ci-cd",
+    "collection",
+    "sync"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "commander": "^11.1.0",
+    "lodash": "^4.17.21",
+    "openapi-to-postmanv2": "^4.21.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

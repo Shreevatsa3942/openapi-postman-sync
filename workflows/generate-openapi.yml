@@ -1,0 +1,128 @@
+# Generate OpenAPI Spec from Spring Boot
+#
+# This workflow runs in your Spring Boot service repository.
+# It generates the OpenAPI spec and triggers the collection update workflow.
+#
+# Add this file to: .github/workflows/generate-openapi.yml in your Spring Boot repo
+
+name: Generate OpenAPI Spec
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'src/**/*.java'
+      - 'pom.xml'
+      - 'build.gradle'
+  workflow_dispatch:
+
+env:
+  POSTMAN_COLLECTION_REPO: your-org/postman-collections  # Change this
+  SERVICE_NAME: your-service-name  # Change this
+
+jobs:
+  generate-openapi:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build application
+        run: mvn clean package -DskipTests
+
+      - name: Start application
+        run: |
+          # Start the app in background
+          java -jar target/*.jar &
+          APP_PID=$!
+          echo "APP_PID=$APP_PID" >> $GITHUB_ENV
+          
+          # Wait for app to be ready (max 60 seconds)
+          echo "Waiting for application to start..."
+          for i in {1..60}; do
+            if curl -s http://localhost:8080/actuator/health > /dev/null 2>&1; then
+              echo "Application started successfully"
+              break
+            fi
+            sleep 1
+          done
+
+      - name: Fetch OpenAPI spec
+        run: |
+          # Try common OpenAPI endpoints
+          for endpoint in "/v3/api-docs" "/swagger/v3/api-docs" "/api-docs"; do
+            if curl -s -f "http://localhost:8080${endpoint}" -o openapi.json; then
+              echo "OpenAPI spec fetched from ${endpoint}"
+              break
+            fi
+          done
+          
+          if [ ! -f openapi.json ]; then
+            echo "Failed to fetch OpenAPI spec"
+            exit 1
+          fi
+          
+          # Validate JSON
+          cat openapi.json | jq . > /dev/null
+
+      - name: Stop application
+        if: always()
+        run: |
+          if [ -n "$APP_PID" ]; then
+            kill $APP_PID 2>/dev/null || true
+          fi
+
+      - name: Upload OpenAPI spec
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi-spec
+          path: openapi.json
+          retention-days: 1
+
+      - name: Trigger collection update
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.POSTMAN_REPO_TOKEN }}
+          repository: ${{ env.POSTMAN_COLLECTION_REPO }}
+          event-type: update-collection
+          client-payload: |
+            {
+              "service": "${{ env.SERVICE_NAME }}",
+              "ref": "${{ github.ref }}",
+              "sha": "${{ github.sha }}",
+              "openapi_spec": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            }
+
+  # Alternative: Use Maven plugin to generate spec at build time
+  generate-openapi-maven:
+    runs-on: ubuntu-latest
+    if: false  # Enable this and disable above job if you prefer build-time generation
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Generate OpenAPI spec
+        run: mvn springdoc-openapi:generate
+
+      - name: Upload OpenAPI spec
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi-spec
+          path: target/openapi.json
+          retention-days: 1

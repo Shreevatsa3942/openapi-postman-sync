@@ -1,0 +1,100 @@
+# ===========================================
+# Spring Boot Application Configuration
+# With SpringDoc OpenAPI settings
+# ===========================================
+
+spring:
+  application:
+    name: your-service
+
+# Server Configuration
+server:
+  port: 8080
+
+# Actuator Configuration (for health checks in CI/CD)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+# ===========================================
+# SpringDoc OpenAPI Configuration
+# ===========================================
+
+springdoc:
+  # API Documentation endpoint
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+    
+  # Swagger UI settings
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    # Sort operations by method
+    operations-sorter: method
+    # Sort tags alphabetically
+    tags-sorter: alpha
+    
+  # Include/exclude paths
+  paths-to-match:
+    - /api/**
+  paths-to-exclude:
+    - /actuator/**
+    
+  # Default response media types
+  default-produces-media-type: application/json
+  default-consumes-media-type: application/json
+  
+  # Enable displaying of request duration
+  show-actuator: false
+  
+  # Cache configuration
+  cache:
+    disabled: false
+    
+  # Groups (optional - for multiple API groups)
+  # group-configs:
+  #   - group: public-api
+  #     paths-to-match:
+  #       - /api/public/**
+  #   - group: admin-api
+  #     paths-to-match:
+  #       - /api/admin/**
+
+# ===========================================
+# OpenAPI Info Configuration
+# This information appears in the generated spec
+# ===========================================
+
+# Custom OpenAPI configuration (use with @OpenAPIDefinition or configuration class)
+# See OpenApiConfig.java example:
+#
+# @Configuration
+# public class OpenApiConfig {
+#     @Bean
+#     public OpenAPI customOpenAPI() {
+#         return new OpenAPI()
+#             .info(new Info()
+#                 .title("Your Service API")
+#                 .version("1.0.0")
+#                 .description("API documentation for Your Service")
+#                 .contact(new Contact()
+#                     .name("Your Team")
+#                     .email("team@example.com"))
+#                 .license(new License()
+#                     .name("MIT")
+#                     .url("https://opensource.org/licenses/MIT")))
+#             .servers(List.of(
+#                 new Server()
+#                     .url("http://localhost:8080")
+#                     .description("Local development"),
+#                 new Server()
+#                     .url("https://api.example.com")
+#                     .description("Production")));
+#     }
+# }
