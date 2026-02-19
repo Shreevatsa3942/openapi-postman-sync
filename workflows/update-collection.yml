@@ -22,6 +22,8 @@ on:
 jobs:
   update-collection:
     runs-on: ubuntu-latest
+    env:
+      CREATE_PR: false  # Set to 'true' to create a PR instead of direct push
     
     steps:
       - name: Checkout Postman collection repo
@@ -117,8 +119,22 @@ jobs:
             echo "changed=true" >> $GITHUB_OUTPUT
           fi
 
+      # Default: commit directly to main (no PR)
+      - name: Commit and push changes
+        if: steps.changes.outputs.changed == 'true' && env.CREATE_PR != 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore: update ${{ steps.service.outputs.service }} collection
+
+          Updated from commit: ${{ steps.service.outputs.sha }}
+          Source ref: ${{ steps.service.outputs.ref }}"
+          git push
+
+      # Optional: create a PR instead of direct push (set CREATE_PR: 'true' at job level to enable)
       - name: Create Pull Request
-        if: steps.changes.outputs.changed == 'true'
+        if: steps.changes.outputs.changed == 'true' && env.CREATE_PR == 'true'
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -151,13 +167,3 @@ jobs:
             postman-sync
           reviewers: |
             # Add reviewers here
-
-      - name: Auto-merge if enabled
-        if: steps.changes.outputs.changed == 'true'
-        env:
-          AUTO_MERGE: false  # Set to true to enable auto-merge
-        run: |
-          if [ "$AUTO_MERGE" = "true" ]; then
-            echo "Auto-merge is enabled, merging PR..."
-            gh pr merge --auto --squash
-          fi

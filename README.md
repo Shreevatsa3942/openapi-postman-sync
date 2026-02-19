@@ -157,7 +157,7 @@ npm run convert -- -i spec.json -o collection.json --skip-sanitize
 │  (API Source)       │────▶│   (Converter)    │────▶│  Repo               │
 └─────────────────────┘     └──────────────────┘     └─────────────────────┘
          │                                                     │
-         │ On push to main                                    │ Auto-PR created
+         │ On push to main                                    │ Auto-committed
          ▼                                                     ▼
    Generate OpenAPI                                     Collection updated
 ```
@@ -190,8 +190,8 @@ Edit the workflow files to customize:
 
 - **Service name**: Change `SERVICE_NAME` in generate-openapi.yml
 - **Collection repo**: Change `POSTMAN_COLLECTION_REPO` in generate-openapi.yml
-- **Auto-merge**: Set `AUTO_MERGE: true` in update-collection.yml
-- **Reviewers**: Add usernames in the `reviewers` section
+- **Enable PR mode**: Set `CREATE_PR: true` in update-collection.yml (default: direct commit to main)
+- **Reviewers**: Add usernames in the `reviewers` section (only used when `CREATE_PR` is enabled)
 
 ## 🏗️ Spring Boot Configuration
 
